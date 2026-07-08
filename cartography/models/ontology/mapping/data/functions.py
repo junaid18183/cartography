@@ -56,13 +56,15 @@ gcp_mapping = OntologyMapping(
                 ),
                 OntologyFieldMapping(ontology_field="runtime", node_field="runtime"),
                 OntologyFieldMapping(
+                    ontology_field="memory", node_field="available_memory_mb"
+                ),
+                OntologyFieldMapping(ontology_field="timeout", node_field="timeout"),
+                OntologyFieldMapping(
                     ontology_field="deployment_type",
                     node_field="",
                     special_handling="static_value",
                     extra={"value": "code"},
                 ),
-                # memory: not available in GCPCloudFunction
-                # timeout: not available in GCPCloudFunction
             ],
         ),
     ],
@@ -95,8 +97,35 @@ azure_mapping = OntologyMapping(
     ],
 )
 
+scaleway_mapping = OntologyMapping(
+    module_name="scaleway",
+    nodes=[
+        OntologyNodeMapping(
+            node_label="ScalewayServerlessFunction",
+            fields=[
+                OntologyFieldMapping(
+                    ontology_field="name", node_field="name", required=True
+                ),
+                OntologyFieldMapping(ontology_field="runtime", node_field="runtime"),
+                OntologyFieldMapping(
+                    ontology_field="memory", node_field="memory_limit"
+                ),
+                OntologyFieldMapping(ontology_field="timeout", node_field="timeout"),
+                # Scaleway Serverless Functions are source-code deployments.
+                OntologyFieldMapping(
+                    ontology_field="deployment_type",
+                    node_field="",
+                    special_handling="static_value",
+                    extra={"value": "code"},
+                ),
+            ],
+        ),
+    ],
+)
+
 FUNCTIONS_ONTOLOGY_MAPPING: dict[str, OntologyMapping] = {
     "aws": aws_mapping,
     "gcp": gcp_mapping,
     "azure": azure_mapping,
+    "scaleway": scaleway_mapping,
 }

@@ -52,6 +52,7 @@ PANEL_TAILSCALE = "Tailscale Options"
 PANEL_OPENAI = "OpenAI Options"
 PANEL_ANTHROPIC = "Anthropic Options"
 PANEL_AIRBYTE = "Airbyte Options"
+PANEL_DATABRICKS = "Databricks Options"
 PANEL_DOCKER_SCOUT = "Docker Scout Options"
 PANEL_TRIVY = "Trivy Options"
 PANEL_TERRAFORM = "Terraform Options"
@@ -61,6 +62,7 @@ PANEL_UBUNTU = "Ubuntu Security Options"
 PANEL_ONTOLOGY = "Ontology Options"
 PANEL_SCALEWAY = "Scaleway Options"
 PANEL_SENTINELONE = "SentinelOne Options"
+PANEL_TENABLE = "Tenable Options"
 PANEL_KEYCLOAK = "Keycloak Options"
 PANEL_SLACK = "Slack Options"
 PANEL_SENTRY = "Sentry Options"
@@ -107,6 +109,7 @@ MODULE_PANELS = {
     "openai": PANEL_OPENAI,
     "anthropic": PANEL_ANTHROPIC,
     "airbyte": PANEL_AIRBYTE,
+    "databricks": PANEL_DATABRICKS,
     "docker_scout": PANEL_DOCKER_SCOUT,
     "trivy": PANEL_TRIVY,
     "terraform": PANEL_TERRAFORM,
@@ -117,6 +120,7 @@ MODULE_PANELS = {
     "scaleway": PANEL_SCALEWAY,
     "sentry": PANEL_SENTRY,
     "sentinelone": PANEL_SENTINELONE,
+    "tenable": PANEL_TENABLE,
     "keycloak": PANEL_KEYCLOAK,
     "slack": PANEL_SLACK,
     "subimage": PANEL_SUBIMAGE,
@@ -472,6 +476,19 @@ class CLI:
                         "[EXPERIMENTAL] Comma-separated list of AWS regions to sync. "
                         'Example: "us-east-1,us-east-2". '
                         "CAUTION: Previously synced regions not in this list will have their assets deleted."
+                    ),
+                    rich_help_panel=PANEL_AWS,
+                    hidden=PANEL_AWS not in visible_panels,
+                ),
+            ] = None,
+            aws_organization_account_ids: Annotated[
+                str | None,
+                typer.Option(
+                    "--aws-organization-account-ids",
+                    help=(
+                        "Comma-separated AWS account IDs to use for AWS Organizations hierarchy sync. "
+                        "Use this to provide the management or delegated administrator account and skip "
+                        "Organizations candidate discovery."
                     ),
                     rich_help_panel=PANEL_AWS,
                     hidden=PANEL_AWS not in visible_panels,
@@ -1291,6 +1308,32 @@ class CLI:
                     hidden=PANEL_TAILSCALE not in visible_panels,
                 ),
             ] = "https://api.tailscale.com/api/v2",
+            tailscale_oauth_client_id_env_var: Annotated[
+                str | None,
+                typer.Option(
+                    "--tailscale-oauth-client-id-env-var",
+                    help=(
+                        "Environment variable name containing a Tailscale OAuth "
+                        "client ID. Used together with "
+                        "--tailscale-oauth-client-secret-env-var to mint a "
+                        "short-lived bearer token at sync time."
+                    ),
+                    rich_help_panel=PANEL_TAILSCALE,
+                    hidden=PANEL_TAILSCALE not in visible_panels,
+                ),
+            ] = None,
+            tailscale_oauth_client_secret_env_var: Annotated[
+                str | None,
+                typer.Option(
+                    "--tailscale-oauth-client-secret-env-var",
+                    help=(
+                        "Environment variable name containing a Tailscale OAuth "
+                        "client secret."
+                    ),
+                    rich_help_panel=PANEL_TAILSCALE,
+                    hidden=PANEL_TAILSCALE not in visible_panels,
+                ),
+            ] = None,
             # =================================================================
             # OpenAI Options
             # =================================================================
@@ -1423,6 +1466,45 @@ class CLI:
                     hidden=PANEL_AIRBYTE not in visible_panels,
                 ),
             ] = "https://api.airbyte.com/v1",
+            # =================================================================
+            # Databricks Options
+            # =================================================================
+            databricks_workspace_url: Annotated[
+                str | None,
+                typer.Option(
+                    "--databricks-workspace-url",
+                    help="Databricks workspace URL, e.g. https://dbc-xxxx.cloud.databricks.com.",
+                    rich_help_panel=PANEL_DATABRICKS,
+                    hidden=PANEL_DATABRICKS not in visible_panels,
+                ),
+            ] = None,
+            databricks_token_env_var: Annotated[
+                str | None,
+                typer.Option(
+                    "--databricks-token-env-var",
+                    help="Environment variable name containing the Databricks personal access token (PAT).",
+                    rich_help_panel=PANEL_DATABRICKS,
+                    hidden=PANEL_DATABRICKS not in visible_panels,
+                ),
+            ] = None,
+            databricks_client_id: Annotated[
+                str | None,
+                typer.Option(
+                    "--databricks-client-id",
+                    help="Databricks OAuth M2M client ID (workspace-level service principal).",
+                    rich_help_panel=PANEL_DATABRICKS,
+                    hidden=PANEL_DATABRICKS not in visible_panels,
+                ),
+            ] = None,
+            databricks_client_secret_env_var: Annotated[
+                str | None,
+                typer.Option(
+                    "--databricks-client-secret-env-var",
+                    help="Environment variable name containing the Databricks OAuth M2M client secret.",
+                    rich_help_panel=PANEL_DATABRICKS,
+                    hidden=PANEL_DATABRICKS not in visible_panels,
+                ),
+            ] = None,
             # =================================================================
             # Docker Scout Options
             # =================================================================
@@ -1714,6 +1796,62 @@ class CLI:
                     hidden=PANEL_SENTINELONE not in visible_panels,
                 ),
             ] = "SENTINELONE_API_TOKEN",
+            # =================================================================
+            # Tenable Options
+            # =================================================================
+            tenable_url: Annotated[
+                str | None,
+                typer.Option(
+                    "--tenable-url",
+                    help="Tenable API base URL. Defaults to https://cloud.tenable.com.",
+                    rich_help_panel=PANEL_TENABLE,
+                    hidden=PANEL_TENABLE not in visible_panels,
+                ),
+            ] = None,
+            tenable_tenant_id: Annotated[
+                str | None,
+                typer.Option(
+                    "--tenable-tenant-id",
+                    help=(
+                        "Identifier used to scope all Tenable nodes in the graph "
+                        "(the TenableTenant node id). Defaults to the hostname of "
+                        "--tenable-url when not set."
+                    ),
+                    rich_help_panel=PANEL_TENABLE,
+                    hidden=PANEL_TENABLE not in visible_panels,
+                ),
+            ] = None,
+            tenable_access_key_env_var: Annotated[
+                str,
+                typer.Option(
+                    "--tenable-access-key-env-var",
+                    help="Environment variable name containing the Tenable access key.",
+                    rich_help_panel=PANEL_TENABLE,
+                    hidden=PANEL_TENABLE not in visible_panels,
+                ),
+            ] = "TENABLE_ACCESS_KEY",
+            tenable_secret_key_env_var: Annotated[
+                str,
+                typer.Option(
+                    "--tenable-secret-key-env-var",
+                    help="Environment variable name containing the Tenable secret key.",
+                    rich_help_panel=PANEL_TENABLE,
+                    hidden=PANEL_TENABLE not in visible_panels,
+                ),
+            ] = "TENABLE_SECRET_KEY",
+            tenable_findings_lookback_days: Annotated[
+                int,
+                typer.Option(
+                    "--tenable-findings-lookback-days",
+                    help=(
+                        "Number of days to look back for Tenable findings exports on each run. "
+                        "Stale findings outside this window are removed from the graph by the cleanup job. Defaults to 180."
+                    ),
+                    min=1,
+                    rich_help_panel=PANEL_TENABLE,
+                    hidden=PANEL_TENABLE not in visible_panels,
+                ),
+            ] = 180,
             # =================================================================
             # Keycloak Options
             # =================================================================
@@ -2007,6 +2145,12 @@ class CLI:
                 )
 
                 parse_and_validate_aws_regions(aws_regions)
+            if aws_organization_account_ids:
+                from cartography.intel.aws.util.common import (
+                    parse_and_validate_aws_account_ids,
+                )
+
+                parse_and_validate_aws_account_ids(aws_organization_account_ids)
 
             # Validate GCP options
             if gcp_requested_syncs:
@@ -2286,6 +2430,18 @@ class CLI:
                 )
                 tailscale_token = os.environ.get(tailscale_token_env_var)
 
+            # Read Tailscale OAuth client credentials
+            tailscale_oauth_client_id = None
+            if tailscale_oauth_client_id_env_var:
+                tailscale_oauth_client_id = os.environ.get(
+                    tailscale_oauth_client_id_env_var,
+                )
+            tailscale_oauth_client_secret = None
+            if tailscale_oauth_client_secret_env_var:
+                tailscale_oauth_client_secret = os.environ.get(
+                    tailscale_oauth_client_secret_env_var,
+                )
+
             # Read Vercel token
             vercel_token = None
             if vercel_token_env_var:
@@ -2356,6 +2512,28 @@ class CLI:
                     airbyte_client_secret_env_var,
                 )
                 airbyte_client_secret = os.environ.get(airbyte_client_secret_env_var)
+
+            # Read Databricks credentials
+            databricks_token = None
+            if databricks_token_env_var:
+                logger.debug(
+                    "Reading Databricks PAT from environment variable %s",
+                    databricks_token_env_var,
+                )
+                databricks_token = os.environ.get(databricks_token_env_var)
+            databricks_client_secret = None
+            if databricks_client_secret_env_var:
+                # Read the secret whenever the env-var flag is set, even if
+                # --databricks-client-id is missing, so the module entry's
+                # partial-OAuth guard sees the asymmetric configuration and
+                # fails loudly instead of silently skipping ingestion.
+                logger.debug(
+                    "Reading Databricks OAuth M2M secret from environment variable %s",
+                    databricks_client_secret_env_var,
+                )
+                databricks_client_secret = os.environ.get(
+                    databricks_client_secret_env_var,
+                )
 
             resolved_docker_scout_source = _resolve_report_source_option(
                 module="docker_scout",
@@ -2434,6 +2612,22 @@ class CLI:
                 )
                 sentinelone_api_token = os.environ.get(sentinelone_api_token_env_var)
 
+            # Read Tenable API keys
+            tenable_access_key = None
+            if tenable_access_key_env_var:
+                logger.debug(
+                    "Reading Tenable access key from environment variable %s",
+                    tenable_access_key_env_var,
+                )
+                tenable_access_key = os.environ.get(tenable_access_key_env_var)
+            tenable_secret_key = None
+            if tenable_secret_key_env_var:
+                logger.debug(
+                    "Reading Tenable secret key from environment variable %s",
+                    tenable_secret_key_env_var,
+                )
+                tenable_secret_key = os.environ.get(tenable_secret_key_env_var)
+
             # Read Keycloak client secret
             keycloak_client_secret = None
             if keycloak_client_secret_env_var:
@@ -2508,6 +2702,7 @@ class CLI:
                 update_tag=update_tag,
                 aws_sync_all_profiles=aws_sync_all_profiles,
                 aws_regions=aws_regions,
+                aws_organization_account_ids=aws_organization_account_ids,
                 aws_best_effort_mode=aws_best_effort_mode,
                 aws_cloudtrail_management_events_lookback_hours=aws_cloudtrail_management_events_lookback_hours,
                 experimental_aws_inspector_batch=experimental_aws_inspector_batch,
@@ -2591,6 +2786,8 @@ class CLI:
                 tailscale_token=tailscale_token,
                 tailscale_org=tailscale_org,
                 tailscale_base_url=tailscale_base_url,
+                tailscale_oauth_client_id=tailscale_oauth_client_id,
+                tailscale_oauth_client_secret=tailscale_oauth_client_secret,
                 vercel_token=vercel_token,
                 vercel_team_id=vercel_team_id,
                 vercel_base_url=vercel_base_url,
@@ -2608,6 +2805,10 @@ class CLI:
                 airbyte_client_id=airbyte_client_id,
                 airbyte_client_secret=airbyte_client_secret,
                 airbyte_api_url=airbyte_api_url,
+                databricks_workspace_url=databricks_workspace_url,
+                databricks_token=databricks_token,
+                databricks_client_id=databricks_client_id,
+                databricks_client_secret=databricks_client_secret,
                 # Forward the user-provided values (not resolved). Config calls
                 # resolve_report_source_with_legacy_fields() internally; the CLI's
                 # _resolve_report_source_option above runs the same logic for early
@@ -2639,6 +2840,11 @@ class CLI:
                 sentinelone_api_token=sentinelone_api_token,
                 sentinelone_account_ids=sentinelone_account_ids_list,
                 sentinelone_site_ids=sentinelone_site_ids_list,
+                tenable_url=tenable_url,
+                tenable_tenant_id=tenable_tenant_id,
+                tenable_access_key=tenable_access_key,
+                tenable_secret_key=tenable_secret_key,
+                tenable_findings_lookback_days=tenable_findings_lookback_days,
                 spacelift_api_endpoint=spacelift_api_endpoint_resolved,
                 spacelift_api_token=spacelift_api_token,
                 spacelift_api_key_id=spacelift_api_key_id,
